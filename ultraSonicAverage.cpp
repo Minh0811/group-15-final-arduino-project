@@ -1,6 +1,5 @@
 #include <Wire.h>   //dunno wat is dis
 #include <Servo.h>  //servo motor
-#include <Adafruit_MLX90614.h>  //temperature sensor
 
 Servo myservo;
 // HC-SR04 (UltraSonic)
