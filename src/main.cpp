@@ -73,12 +73,14 @@ void loop()
     // lightSensor();
     // buzzer();
     lux = GY30.readLightLevel();
-    //    if (lux > 2000){
-    //      digitalWrite(buzzerPin, HIGH);
-    //      }
-    //     else{
-    //      digitalWrite(buzzerPin, LOW);
-    //      }
+    if (lux > 2000)
+    {
+        digitalWrite(buzzerPin, HIGH);
+    }
+    else
+    {
+        digitalWrite(buzzerPin, LOW);
+    }
 }
 void lightSensor()
 {
