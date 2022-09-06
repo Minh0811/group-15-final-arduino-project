@@ -47,7 +47,7 @@ void lightSensor()
 }
 void buzzer()
 {
-    if (lux < 50)
+    if (lux > 500000)
     {
         for (int i = 0; i < 10; i++)
         {
