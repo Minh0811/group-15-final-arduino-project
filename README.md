@@ -1,3 +1,3 @@
 # group-15-final-arduino-project
-
-![My Image](./public/KY-012-KY-008-BH1750-GY30_bb.png)
+This is our tripwire design with wifi using esp8266-01s
+![My Image](./public/Screen Shot 2022-09-06 at 18.39.31.png)
