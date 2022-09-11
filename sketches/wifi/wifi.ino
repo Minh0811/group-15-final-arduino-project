@@ -82,22 +82,3 @@ void loop()
     digitalWrite(buzzerPin, LOW);
   }
 }
-void lightSensor()
-{
-  lux = GY30.readLightLevel();                      // read the light level from the sensor and store it in a variable
-  Serial.println((String) "Light: " + lux + " lx"); // print the data to the serial monitor
-                                                    // delay(100);                                       // Pause for a second before repeating the sensor poll
-}
-void buzzer()
-{
-  if (lux > 500000)
-  {
-    for (int i = 0; i < 10; i++)
-    {
-      digitalWrite(buzzerPin, HIGH);
-      delay(500);
-      digitalWrite(buzzerPin, LOW);
-      delay(500);
-    }
-  }
-}
