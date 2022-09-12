@@ -12,23 +12,36 @@
 #include <Wire.h>
 
 char auth[] = BLYNK_AUTH_TOKEN;
-
-// Your WiFi credentials.
-// Set password to "" for open networks.
 char ssid[] = "1234";
 char pass[] = "Silva!081102";
 
 BlynkTimer timer;
-
+// light
 BH1750 lightMeter;
 
+// define
+int switchInput;
+
+float lightIntensity;
 void sendSensor()
 {
-  float lux = lightMeter.readLightLevel();
-  Serial.println(lux);
-  Blynk.virtualWrite(V2, lux);
+  lightIntensity = lightMeter.readLightLevel();
+  // Serial.println(lightIntensity);
+  Blynk.virtualWrite(V2, lightIntensity);
   delay(1000);
+  //   if(lightIntensity > 500){
+  //   Blynk.email("vokhaiminh0811@gmail.com", "Alert", "Temperature over 28C!");
+  //    Blynk.logEvent("light_alert","Tese");
+  //  }
 };
+
+// Blink
+BLYNK_WRITE(V0)
+{
+  int switchInput = param.asInt();
+  Blynk.virtualWrite(V1, switchInput);
+  Serial.println(switchInput);
+}
 void setup()
 {
   Serial.begin(9600);
@@ -37,7 +50,6 @@ void setup()
   Wire.begin();
   // On esp8266 you can select SCL and SDA pins using Wire.begin(D4, D3);
   // For Wemos / Lolin D1 Mini Pro and the Ambient Light shield use Wire.begin(D2, D1);
-
   lightMeter.begin();
 
   Serial.println(F("BH1750 Test begin"));
