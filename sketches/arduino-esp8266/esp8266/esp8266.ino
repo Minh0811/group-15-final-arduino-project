@@ -43,12 +43,14 @@ void laserControl(){
   }
 
 void buzzer(){
-  if(lightIntensity < 2000 && switchInput == 1){
+  if(lightIntensity > 500 && switchInput == 1){
     Serial.println(1);
+    delay(100);
     }
     else{
       Serial.println(0);
       }
+        delay(100);
   }
 void email(){
        if(lightIntensity > 500){
@@ -86,6 +88,6 @@ void loop()
 {
   Blynk.run();
   timer.run();
-  //laserControl();
-  //buzzer();
+  laserControl();
+  buzzer();
 }

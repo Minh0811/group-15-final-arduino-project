@@ -1,60 +1,209 @@
-#include <Wire.h>   //dunno wat is dis
-#include <Servo.h>  //servo motor
+#include <SoftwareSerial.h>
+#include <Keypad.h>            // the library for the 4x4 keypad
+#include <LiquidCrystal_I2C.h> // the library for the i2c 1602 Serial
+#include <Servo.h>             // the library to control the servo motor
+// LiquidCrystal_I2C Serial(0x3F,20,4); // gets the Serial
+Servo servo;
 
-Servo myservo;
-// HC-SR04 (UltraSonic)
-#define echoPin 2 // attach pin D2 Arduino to pin Echo of HC-SR04
-#define trigPin 3 // attach pin D3 Arduino to pin Trig of HC-SR04
-long duration;    // variable for the duration of sound wave travel
-int distance;     // variable for the distance measurement
-int pos = 0;
-#define SOUND_VELOCITY 0.034
-#define Grove_Water_Sensor 8 // attach water sensor to Arduino Digital Pin 8
+// Define
+int tx = 2;
+int rx = 3;
+// Message from esp
+String espMessage;
+// buzzer => KY-012
+int buzzerPin = 12;
+
+SoftwareSerial mySerial(3, 2);
+
+#define Password_Length 2                      // the length of the password, if the password is 4 digits long set this to 5
+int Position = 0;                              // position of the servo
+char Particular[Password_Length];              // the password length
+char Specific[Password_Length] = "3";          // the password which is called specific in the code, change this to anything you want with the numbers 0-9 and the letters A-D
+byte Particular_Count = 0, Specific_Count = 0; // counts the amount of digits and and checks to see if the password is correct
+char Key;
+const byte ROWS = 4;      // the amount of rows on the keypad
+const byte COLS = 4;      // the amount of columns on the keypad
+char keys[ROWS][COLS] = { // sets the rowns and columns
+    // sets the keypad digits
+    {'1', '2', '3', 'A'},
+
+    {'4', '5', '6', 'B'},
+
+    {'7', '8', '9', 'C'},
+
+    {'*', '0', '#', 'D'}};
+bool SmartDoor = true; // the servo
+// the pins to plug the keypad into
+byte rowPins[ROWS] = {4, 5, 6, 7};
+byte colPins[COLS] = {8, 9, 10, 11};
+Keypad myKeypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS); // gets the data from the keypad
+
+// locked charcater
+byte Locked[8] = {
+    B01110,
+    B10001,
+    B10001,
+    B11111,
+    B11011,
+    B11011,
+    B11011,
+    B11111};
+// open character
+byte Opened[8] = {
+    B01110,
+    B00001,
+    B00001,
+    B11111,
+    B11011,
+    B11011,
+    B11011,
+    B11111};
+
+void buzzer()
+{
+  // digitalWrite(buzzerPin, (espMessage == 1) ? LOW : HIGH);
+  if (espMessage.equals("1"))
+  {
+    digitalWrite(buzzerPin, HIGH);
+  }
+  else if (espMessage.equals("0"))
+  {
+    digitalWrite(buzzerPin, LOW);
+  }
+}
 
 void setup()
 {
-    Serial.begin(9600);
-    // HC-SR04
-    pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
-    pinMode(echoPin, INPUT);  // Sets the echoPin as an INPUT
-    myservo.attach(10); // access input pin #10
-    pinMode(Grove_Water_Sensor, INPUT);
-}
+  Serial.begin(57600);
+  mySerial.begin(9600);
 
-void ultraSonic_openlid()
-{
-    digitalWrite(trigPin, LOW); // Clears the trigPin
-    delayMicroseconds(2);
-    digitalWrite(trigPin, HIGH); // Sets the trigPin on HIGH state for 10 micro seconds
-    delayMicroseconds(10);
-    digitalWrite(trigPin, LOW);
+  // buzzer
+  pinMode(buzzerPin, OUTPUT);
 
-    duration = pulseIn(echoPin, HIGH); // Reads the echoPin, returns the sound wave travel time in microseconds
-
-    distance = duration * SOUND_VELOCITY / 2; // Calculate the distance
-    Serial.println(distance);
-}
-
-// Openlid done
-// weight: wait for ESP2866 to be done
-
-// Water leaking function
-void waterSensor()
-{
-  if (digitalRead(Grove_Water_Sensor) == LOW) {
-    //Insert code to send notification back to the user
-  }
+  servo.attach(12); // attaches the servo to pin 10
+  // ServoClose(); // closes the servo when you say this function
+  // Serial.begin(9600); // initializes the Serial
+  // Serial.backlight(); // turns on the backlight
+  // Serial.setCursor(0,0); // sets the cursor on the Serial
+  Serial.println("Vector X"); // printlns the text/charater
+  // Serial.setCursor(0,1); // sets the cursor on the Serial
+  Serial.println("Arduino Lock!!!"); // printlns text
+  delay(4000);                       // waits 4 seconds
+                                     // Serial.clear(); // clears the Serial diplay
 }
 
 void loop()
 {
-  ultraSonic_openlid(); // 2 ultrasonic sensors: openlid + weight
-  if (distance <= 5) {
-    myservo.write(90);
-    delay(10000);
-  } else {
-    myservo.write(0);
-    // delay(15);
+  espMessage = mySerial.readStringUntil('\r');
+  Serial.println(espMessage);
+  //  buzzer();
+
+  // Key = myKeypad.getKey();
+  // Serial.println(Key);
+  if (SmartDoor == 0) // opens the smart door
+  {
+    Key = myKeypad.getKey(); // the word key = myKeypad which gets the value
+
+    if (Key == '#')
+    {
+
+      ServoClose();
+
+      Serial.println("Door Closed");
+      /
+
+          Serial.write(0);
+      delay(3000);
+      SmartDoor = 1;
+    }
   }
-    delay(500);
+  else
+  {
+    Open();
+  } // keeps the door open
+}
+
+void clearData() // clears the data
+{
+  while (Particular_Count != 0) // counts the digits pressed
+  {
+    Particular[Particular_Count--] = 0; // counts how many digits
+  }
+  return; // returns the data
+}
+
+void ServoOpen() // opens the servo
+{
+  for (Position = 180; Position >= 0; Position -= 5)
+  {                        // moves from 0 to 180 degrees
+    servo.write(Position); // moves to the postion
+    delay(15);             // waits 15 milliseconds
+  }
+}
+
+void ServoClose() // closes the servo
+{
+  for (Position = 0; Position <= 180; Position += 5)
+  {                        // moves from position 0 to 180 degrees
+    servo.write(Position); // moves to the position
+    delay(15);             // waits 15 milliseconds
+  }
+}
+
+void Open() // function declarations
+{
+  // Serial.setCursor(1,0); // sets the cursor on the Serial
+  // Serial.println("Enter Password:"); // printlns the text
+
+  Key = myKeypad.getKey(); // gets the keys you press from the keypad
+  if (Key)
+  {
+    Particular[Particular_Count] = Key;
+    // Serial.setCursor(Particular_Count, 1); // sets the cursor on the Serial
+    Serial.println(Key); // printlns '*' instead of the password
+    Particular_Count++;  // counts the length of the password
+  }
+
+  if (Particular_Count == Password_Length - 1) // gets the length of the password
+  {
+    if (!strcmp(Particular, Specific)) // counts the length and checks to see if the password is correct
+    {
+      // Serial.clear();
+      ServoOpen(); // moves the servo 180 degrees
+                   //  Serial.setCursor(2,0); // sets the cursor on the Serial
+      Serial.println("Door Opened");
+      //  Serial.createChar(1, Opened);
+      //  Serial.setCursor(14,0); // sets the cursor on the Serial
+      Serial.write(1);
+      //   Serial.setCursor(0,1); // sets the cursor on the Serial
+      Serial.println("Press # to Close");
+      SmartDoor = 0;
+    }
+    else
+    {
+      // Serial.clear();
+      //  Serial.setCursor(0,0); // sets the cursor on the Serial
+      Serial.println("Wrong Password"); // printlns the text/character
+                                        // Serial.setCursor(0,1);
+      Serial.println("Try Again In");
+      // Serial.setCursor(13,1);
+      Serial.println("04");
+      delay(1000);
+      //   Serial.setCursor(13,1);
+      Serial.println("03");
+      delay(1000);
+      // Serial.setCursor(13,1);
+      Serial.println("02");
+      delay(1000);
+      // Serial.setCursor(13,1);
+      Serial.println("01");
+      delay(1000);
+      // Serial.setCursor(13,1);
+      Serial.println("00");
+      delay(1000);
+      // Serial.clear();
+      SmartDoor = 1; // closes the smart door
+    }
+    // clearData(); // clears the data
+  }
 }
