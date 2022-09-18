@@ -18,70 +18,65 @@ char pass[] = "Silva!081102";
 BlynkTimer timer;
 // light
 BH1750 lightMeter;
+float lightIntensity;
 
 // define
 int switchInput;
-
-float lightIntensity;
 
 // laser => KY-008
 uint8_t laserPin = D5;
 
 void sendSensor()
 {
+  // read light value
   lightIntensity = lightMeter.readLightLevel();
-   Serial.println(lightIntensity);
+  Serial.println(lightIntensity);
+
+  // push light value to blynk chart
   Blynk.virtualWrite(V2, lightIntensity);
-  //delay(1000);
-    if(lightIntensity > 500){
-      Blynk.logEvent("warning_security_breached","We have detect unsual behavior around your trip wire!");
-    }
+
+  // Email
+  if (lightIntensity < 300)
+  {
+    Blynk.logEvent("warning_security_breached", "We have detect unsual behavior around your trip wire!");
+  }
 };
 
-void laserControl(){
-    digitalWrite(laserPin, (switchInput == 1) ? HIGH : LOW);
-  }
+void laserControl()
+{
+  digitalWrite(laserPin, (switchInput == 1) ? HIGH : LOW);
+}
 
-void buzzer(){
-  if(lightIntensity > 500 && switchInput == 1){
+void buzzer()
+{
+  if (lightIntensity > 500 && switchInput == 1)
+  {
     Serial.println(1);
     delay(100);
-    }
-    else{
-      Serial.println(0);
-      }
-        delay(100);
   }
-void email(){
-       if(lightIntensity > 500){
-     Blynk.email("vokhaiminh0811@gmail.com", "Alert", "Temperature over 28C!");
-      Blynk.logEvent("light_alert","Tese");
-    }
+  else
+  {
+    Serial.println(0);
   }
-  
+  delay(100);
+}
+
 // Blink
 BLYNK_WRITE(V0)
 {
   switchInput = param.asInt();
   Blynk.virtualWrite(V1, switchInput);
-//  Serial.print("Input ");
-//  Serial.println(switchInput);
 }
 void setup()
 {
   Serial.begin(9600);
   timer.setInterval(2500L, sendSensor);
   Blynk.begin(auth, ssid, pass);
-  // Initialize the I2C bus (BH1750 library doesn't do this automatically)
   Wire.begin();
-  // On esp8266 you can select SCL and SDA pins using Wire.begin(D4, D3);
-  // For Wemos / Lolin D1 Mini Pro and the Ambient Light shield use Wire.begin(D2, D1);
   lightMeter.begin();
-
-   // laser
-    pinMode(laserPin, OUTPUT);
-
-  Serial.println(F("BH1750 Test begin"));
+  // laser
+  pinMode(laserPin, OUTPUT);
+  Serial.println(F("Tripwire Begin!"));
 }
 
 void loop()
